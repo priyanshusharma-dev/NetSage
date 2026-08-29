@@ -1,0 +1,148 @@
+"""
+Data Collector & Diagnostic Telemetry Engine
+============================================
+
+Viva Defensibility Rationale:
+-----------------------------
+1. Automated Active & Passive Probing:
+   Network troubleshooting cannot rely solely on static routing tables; it requires cross-checking
+   control plane state (routes, ACLs, interface flags) against data plane reachability (end-to-end
+   ICMP probes and traceroute hops).
+2. Synthesized Anomaly Summarization:
+   The collector converts multi-device telemetry into a structured, concise natural language symptom
+   briefing. This avoids flooding LLM token context with irrelevant boilerplate lines while ensuring
+   crucial fault indicators (e.g. 'GigabitEthernet0/1 administratively down', '100% loss to Gateway',
+   'ACL match count > 0') are highlighted.
+"""
+
+import time
+import logging
+from typing import Dict, Any, List
+from backend.app.config import settings
+from backend.app.topology.controller import topology_controller
+from backend.app.collector.schemas import (
+    SymptomReport, NodeTelemetry, PingSummary, DNSQuerySummary
+)
+from backend.app.collector.parser import CLIParser
+
+logger = logging.getLogger(__name__)
+
+class TelemetryCollector:
+    def __init__(self):
+        self.parser = CLIParser()
+
+    def collect_all_telemetry(self) -> SymptomReport:
+        """
+        Executes diagnostic commands across core topology nodes and synthesizes a full SymptomReport.
+        """
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        report = SymptomReport(timestamp=timestamp)
+        anomalies: List[str] = []
+
+        # 1. Collect Router Telemetry (HQ-R1, Core-R3, Branch-R2)
+        routers = ["HQ-R1", "Core-R3", "Branch-R2"]
+        for r_id in routers:
+            sh_int = topology_controller.execute_command(r_id, "show ip interface brief")
+            sh_route = topology_controller.execute_command(r_id, "show ip route")
+            sh_acl = topology_controller.execute_command(r_id, "show ip access-lists")
+            
+            parsed_interfaces = self.parser.parse_show_ip_interface_brief(sh_int)
+            parsed_routes = self.parser.parse_show_ip_route(sh_route)
+            parsed_acls = self.parser.parse_show_ip_access_lists(sh_acl)
+            
+            # Anomaly Checks: Interfaces down
+            for iface in parsed_interfaces:
+                if iface.status != "up" or iface.protocol != "up":
+                    anomalies.append(f"[{r_id}] Interface {iface.interface} is in status '{iface.status}' (protocol {iface.protocol}).")
+
+            # Anomaly Checks: ACL rules with matches or deny statements
+            for acl in parsed_acls:
+                if "deny" in acl.rule.lower():
+                    anomalies.append(f"[{r_id}] Active ACL '{acl.name}' contains filter rule: '{acl.rule}' (hits: {acl.matches}).")
+
+            node_data = NodeTelemetry(
+                node_id=r_id,
+                node_type="router",
+                interfaces=parsed_interfaces,
+                routes=parsed_routes,
+                acls=parsed_acls,
+                raw_commands={
+                    "show ip interface brief": sh_int,
+                    "show ip route": sh_route,
+                    "show ip access-lists": sh_acl
+                }
+            )
+            report.nodes_telemetry[r_id] = node_data
+
+        # 2. Collect Host Telemetry & End-to-End Probes (Host-A, Host-B)
+        hosts = [
+            ("Host-A", "192.168.10.1", "192.168.20.20", "internal.corp.local"),
+            ("Host-B", "192.168.20.1", "192.168.10.10", "internal.corp.local")
+        ]
+
+        for h_id, local_gw, remote_host, dns_query in hosts:
+            ip_out = topology_controller.execute_command(h_id, "ip addr")
+            route_out = topology_controller.execute_command(h_id, "ip route")
+            ping_gw = topology_controller.execute_command(h_id, f"ping {local_gw}")
+            ping_rem = topology_controller.execute_command(h_id, f"ping {remote_host}")
+            dns_out = topology_controller.execute_command(h_id, f"nslookup {dns_query}")
+
+            parsed_ping_gw = self.parser.parse_ping(h_id, ping_gw, local_gw)
+            parsed_ping_rem = self.parser.parse_ping(h_id, ping_rem, remote_host)
+            parsed_dns = self.parser.parse_dns_lookup(h_id, dns_out, dns_query)
+
+            report.ping_tests.extend([parsed_ping_gw, parsed_ping_rem])
+            report.dns_tests.append(parsed_dns)
+
+            if not parsed_ping_gw.is_reachable:
+                anomalies.append(f"[{h_id}] Cannot reach local default gateway {local_gw} (Loss: {parsed_ping_gw.loss_percent}%).")
+            if not parsed_ping_rem.is_reachable:
+                anomalies.append(f"[{h_id}] Cannot reach remote host {remote_host} (Loss: {parsed_ping_rem.loss_percent}%).")
+            if not parsed_dns.is_success:
+                anomalies.append(f"[{h_id}] DNS resolution failed for '{dns_query}' using server {parsed_dns.server_queried}.")
+
+            node_data = NodeTelemetry(
+                node_id=h_id,
+                node_type="host",
+                raw_commands={
+                    "ip addr": ip_out,
+                    "ip route": route_out,
+                    f"ping {local_gw}": ping_gw,
+                    f"ping {remote_host}": ping_rem,
+                    f"nslookup {dns_query}": dns_out
+                }
+            )
+            report.nodes_telemetry[h_id] = node_data
+
+        # 3. Check for Routing Loop Indicators (traceroute from HQ-R1 or Branch-R2)
+        trace_out = topology_controller.execute_command("HQ-R1", "traceroute 192.168.20.20")
+        if "Routing Loop Detected" in trace_out or "!H" in trace_out:
+            anomalies.append("[HQ-R1 -> 192.168.20.20] Traceroute indicates TTL expiration / routing loop between Core-R3 and HQ-R1.")
+
+        report.anomalies_detected = anomalies
+        report.condensed_symptom_text = self._build_condensed_symptom_text(report)
+        return report
+
+    def _build_condensed_symptom_text(self, report: SymptomReport) -> str:
+        """Constructs a high-density summary string for RAG semantic search and LLM context."""
+        lines = [f"Network Telemetry Snapshot [{report.timestamp}]:"]
+        if not report.anomalies_detected:
+            lines.append("All network probes and interfaces are HEALTHY. Full connectivity confirmed.")
+        else:
+            lines.append("DETECTED ANOMALIES & FAULT SIGNATURES:")
+            for a in report.anomalies_detected:
+                lines.append(f"  - {a}")
+        
+        lines.append("\nPING REACHABILITY MATRIX:")
+        for p in report.ping_tests:
+            status = "SUCCESS (0% Loss)" if p.is_reachable else f"FAILED ({p.loss_percent}% Loss)"
+            lines.append(f"  * {p.source_node} -> {p.target_ip}: {status}")
+
+        lines.append("\nDNS RESOLUTION SUMMARY:")
+        for d in report.dns_tests:
+            res_str = f"Resolved to {d.resolved_ip}" if d.is_success else "FAILED / TIMEOUT"
+            lines.append(f"  * Query '{d.hostname}' via {d.server_queried}: {res_str}")
+
+        return "\n".join(lines)
+
+collector = TelemetryCollector()
