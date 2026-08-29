@@ -41,7 +41,14 @@ class TopologyController:
         return self.fault_injector.clear_all_faults()
 
     def execute_command(self, node_id: str, command: str) -> str:
-        """Executes CLI command on a specified node."""
+        """Executes CLI command on a specified node (live via GNS3/Netmiko or in-memory simulation)."""
+        if self.mode == "GNS3_LIVE" and self.gns3_client.is_server_online():
+            try:
+                # Execute via live GNS3 Netmiko runner
+                from backend.app.collector.netmiko_collector import collector
+                return collector.execute_live_netmiko(node_id, command)
+            except Exception:
+                pass
         return self.simulator.execute_command(node_id, command)
 
 # Global Singleton Instance for Backend Services

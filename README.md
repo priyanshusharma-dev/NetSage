@@ -5,13 +5,15 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-14%2B-black?logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_Store-orange?logo=chroma&logoColor=white)
 ![Groq Llama 3](https://img.shields.io/badge/Groq-Llama_3.3_70B-purple?logo=meta&logoColor=white)
+![CI](https://img.shields.io/badge/CI-GitHub_Actions-green?logo=githubactions&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 **An autonomous LLM-assisted network diagnostics and automated remediation platform with RAG vector retrieval, configurable safety gatekeeping, and real-time topology visualization.**
 
-[Live Web UI](#-quick-start) • [Architecture](#-architecture) • [Supported Faults](#-supported-fault-taxonomy) • [Viva Defense Guide](#-viva-voce-defensibility)
+[Quick Start](#-quick-start) • [Architecture](#-architecture) • [Supported Faults](#-supported-fault-taxonomy) • [Viva Voce Defensibility](#-viva-voce-defensibility)
 
 </div>
 
@@ -19,19 +21,25 @@
 
 ## 📖 Overview
 
-**NetSage** is a solo university research project for a Computer Networking curriculum that demonstrates an end-to-end **closed-loop autonomous network troubleshooting system**. 
+**NetSage** is a Computer Networking university project that demonstrates an end-to-end **closed-loop autonomous network troubleshooting system**. 
 
-Unlike naive LLM wrappers that hallucinate commands, NetSage introduces an **explainable RAG architecture** combined with a **Statistical Fallback Gatekeeper** that refuses to emit unverified remediation commands when diagnostic certainty falls below threshold boundaries.
+### 🛡️ The Headline Engineering Innovation: Defensive Fallback Gatekeeper
+In mission-critical enterprise networking, **unjustified AI confidence is dangerous** — hallucinating an incorrect `shutdown` or deleting active BGP/OSPF peers can trigger wide-scale outages. 
 
-### 🌟 Key Features
-- **Deterministic 8-Node Campus Topology**: Simulates realistic Cisco IOS and Linux POSIX nodes (`HQ-R1`, `Core-R3`, `Branch-R2`, `SW1`, `SW2`, `Host-A`, `Host-B`, `DNS-Server`). Supports in-memory simulation and live GNS3 REST API v2.
-- **Chaos Engineering Fault Deck**: Programmatic injection across OSI Layers 1 through 7 (`interface_down`, `subnet_misconfig`, `acl_blocking`, `routing_loop`, `dns_failure`).
-- **Active Telemetry Extraction**: Netmiko-driven command parsing (`show ip route`, `show ip int br`, `ping`, `traceroute`, `nslookup`).
-- **Domain RAG via ChromaDB**: `sentence-transformers/all-MiniLM-L6-v2` dense vector retrieval over curated networking knowledge bases.
-- **Dual-Tier LLM Orchestration**: Primary cloud inference via **Groq Llama 3.3 70B**, automated failover to **Local Ollama**, and an air-gapped deterministic expert engine.
-- **Safety Gatekeeper (Defensible Deferral)**: Multi-threshold guardrail ($d_{\text{min}} > 0.85$ or $C_{\text{LLM}} < 65\%$) that yields control to human engineers with: `"Insufficient evidence — escalate to manual diagnosis"`.
-- **Interactive Web Terminal Console**: Real-time Cisco IOS exec shell on any node from the web browser.
-- **Persistent SQLite Audit Logger**: Ground-truth accuracy telemetry tracking with one-click verification labeling.
+NetSage implements a **Statistical Fallback Gatekeeper** that computes dual-threshold uncertainty boundaries ($d_{\text{min}} > 0.85$ or $C_{\text{LLM}} < 65\%$). When telemetry is ambiguous or out-of-distribution, NetSage **actively refuses to guess**, safely yielding control to human engineers with: `"Insufficient evidence — escalate to manual diagnosis"`.
+
+---
+
+## 🌟 Key Capabilities
+- **Dual-Engine Architecture (Simulated & Live Netmiko)**:
+  - **High-Fidelity In-Memory Simulation Engine**: State-machine emulation of Cisco IOS and Linux POSIX CLI responses for 100% reproducible, zero-flake viva voce demonstrations without hypervisor crashes.
+  - **Live GNS3 & Netmiko Connector**: Integrated `netmiko.ConnectHandler` telnet/SSH execution hooks for real GNS3 QEMU / Dynamips appliances.
+- **Chaos Engineering Fault Deck**: Deterministic injection across OSI Layers 1 through 7 (`interface_down`, `subnet_misconfig`, `acl_blocking`, `routing_loop`, `dns_failure`).
+- **Domain RAG via ChromaDB**: `sentence-transformers/all-MiniLM-L6-v2` dense vector retrieval over 8 curated network troubleshooting guides (MTU sizing, OSPF adjacency, ARP conflicts, ACLs, etc.).
+- **Dual-Tier LLM Orchestration**: Primary cloud inference via **Groq Llama 3.3 70B**, automated failover to **Local Ollama**, and an air-gapped deterministic expert fallback.
+- **Interactive Web Terminal Console**: Direct in-browser Cisco IOS exec shell (`show ip route`, `ping`, `traceroute`, `show ip access-lists`).
+- **Persistent SQLite Audit Database**: Full telemetry persistence with ground-truth accuracy tracking (`netsage_audit.db`).
+- **Docker Compose One-Command Spinup**: Automated multi-container orchestration.
 
 ---
 
@@ -44,7 +52,7 @@ flowchart TD
     end
 
     subgraph Data_Plane ["Telemetry & Probing Plane"]
-        B -->|CLI Probes| C[Netmiko Diagnostic Runner]
+        B -->|CLI Probes| C[Netmiko Diagnostic Runner / Simulator]
         C -->|show ip route, ping, nslookup| D[Structured Feature Parser & Anomaly Extractor]
     end
 
@@ -80,33 +88,23 @@ flowchart TD
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
-- Python 3.10+
-- Node.js 18+
+### Option A: Local Development
 
-### 2. Setup Environment
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/NetSage.git
+# 1. Clone the repository
+git clone https://github.com/priyanshusharma-dev/NetSage.git
 cd NetSage
 
-# Install Python dependencies
+# 2. Install Backend dependencies
 pip install -r backend/requirements.txt
 pip install chromadb sentence-transformers
 
-# Install Frontend dependencies
-cd frontend
-npm install
-cd ..
-```
-
-### 3. Start Backend & Frontend Services
-```bash
-# Terminal 1: Launch FastAPI Backend (Port 8000)
+# 3. Start FastAPI Backend (Port 8000)
 python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Terminal 2: Launch Next.js Dashboard (Port 3000)
+# 4. Start Next.js Frontend Dashboard (Port 3000)
 cd frontend
+npm install
 npm run dev
 ```
 
@@ -114,13 +112,32 @@ Open **`http://localhost:3000`** in your browser. (Interactive API docs at **`ht
 
 ---
 
+### Option B: Docker Compose (One-Click Launch)
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run isolated Pytest unit tests with mocked data:
+pytest backend/tests/test_unit.py
+
+# Run complete End-to-End pipeline verification:
+python backend/tests/test_e2e_backend.py
+```
+
+---
+
 ## 🎓 Viva Voce Defensibility
 
-Key talking points for academic examination:
-1. **Explainable AI**: The system never obscures RAG retrieval. Exact vector chunks, cosine distances, and source documents are exposed in both the UI and SQLite audit logs.
-2. **Failure-Safe AI (Safe Deferral)**: Demonstrates defensive engineering by computing uncertainty boundaries and refusing to hallucinate dangerous CLI commands.
-3. **Dual-Backend Zero-Flake Design**: Operates seamlessly in deterministic simulated mode for live presentations without requiring heavy virtualization hypervisors.
-4. **Detailed Defense Resources**: See **[docs/VIVA_DEFENSE_GUIDE.md](docs/VIVA_DEFENSE_GUIDE.md)** and **[docs/documented_failure_cases.md](docs/documented_failure_cases.md)**.
+Key discussion points for academic defense:
+1. **Explainable AI**: The system never obscures RAG retrieval. Exact vector chunks, cosine distances, and source documents are displayed in the UI and SQLite audit logs.
+2. **Defensible Deferral**: Demonstrates responsible AI by setting strict confidence gates to prevent dangerous hallucinated network configuration commands.
+3. **Simulated-First Reliability**: Provides a guaranteed, zero-flake presentation environment without requiring complex GNS3 VM hardware bindings during examination.
 
 ---
 
@@ -128,29 +145,33 @@ Key talking points for academic examination:
 
 ```text
 NetSage/
+├── .github/workflows/ci.yml       # GitHub Actions automated test & build CI
 ├── backend/
 │   ├── app/
-│   │   ├── api/             # FastAPI REST endpoints
-│   │   ├── collector/       # Netmiko telemetry & regex parsers
-│   │   ├── kb/              # ChromaDB vector store & all-MiniLM-L6-v2 embeddings
-│   │   ├── rag/             # Prompt engineering, LLM router & Fallback Gatekeeper
-│   │   ├── topology/        # 8-node Campus topology & simulation state engine
-│   │   ├── config.py        # Centralized settings & thresholds
-│   │   └── main.py          # FastAPI application entrypoint
-│   ├── tests/               # Automated test suites (unit & e2e)
-│   └── requirements.txt     # Backend Python dependencies
+│   │   ├── collector/             # Netmiko runner, regex parsers, and telemetry schemas
+│   │   ├── kb/                    # ChromaDB vector store & all-MiniLM-L6-v2 embeddings
+│   │   ├── rag/                   # Prompt config, LLM router & Fallback Gatekeeper
+│   │   ├── topology/              # 8-node Campus topology, GNS3 client & simulation engine
+│   │   ├── config.py              # Global settings & threshold parameters
+│   │   └── main.py                # FastAPI REST application
+│   ├── tests/                     # Pytest unit & e2e verification suites
+│   ├── Dockerfile                 # Backend container definition
+│   └── requirements.txt           # Python dependencies
 ├── frontend/
 │   ├── src/
-│   │   ├── app/             # Next.js 14 App Router (page.tsx, globals.css)
-│   │   └── components/      # UI components (TopologyView, Terminal, Radial Gauge, etc.)
-│   └── package.json         # Frontend Node dependencies
+│   │   ├── app/                   # Next.js 14 App Router (page.tsx, globals.css)
+│   │   ├── components/            # UI components (TopologyView, Terminal, Radial Gauge, etc.)
+│   │   └── types/                 # Strongly typed TypeScript interfaces
+│   ├── Dockerfile                 # Frontend container definition
+│   └── package.json               # Frontend Node dependencies
 ├── knowledge_base/
-│   └── source_docs/         # Curated markdown troubleshooting guides
-├── docs/                    # Viva voce examination guide & failure case analysis
-├── .env.example             # Template environment variables
-├── .gitignore               # Standard repository ignore rules
-├── LICENSE                  # MIT License
-└── README.md                # Project documentation
+│   └── source_docs/               # 8 curated markdown network troubleshooting guides
+├── docs/                          # Viva voce examination guide & failure case analysis
+├── docker-compose.yml             # Container orchestration
+├── .env.example                   # Template environment variables
+├── .gitignore                     # Repository ignore rules
+├── LICENSE                        # MIT License
+└── README.md                      # Project documentation
 ```
 
 ---
