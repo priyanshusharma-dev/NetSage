@@ -2,30 +2,12 @@
 
 import React, { useState } from 'react';
 import { Router, Server, Laptop, Network, Activity, Terminal, ExternalLink, ShieldAlert, CheckCircle2 } from 'lucide-react';
-
-interface NodeData {
-  id: string;
-  name: string;
-  type: string;
-  x: number;
-  y: number;
-  interfaces: Record<string, any>;
-  default_gateway?: string;
-  dns_server?: string;
-}
-
-interface LinkData {
-  source_node: string;
-  source_port: string;
-  target_node: string;
-  target_port: string;
-  subnet: string;
-}
+import { NodeData, LinkData, ActiveFault } from '@/types';
 
 interface TopologyViewProps {
   nodes: NodeData[];
   links: LinkData[];
-  activeFaults: any[];
+  activeFaults: ActiveFault[];
   onSelectNode: (node: NodeData) => void;
   onOpenTerminal: (nodeId: string, nodeName: string) => void;
 }

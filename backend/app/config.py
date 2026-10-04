@@ -17,6 +17,9 @@ Viva Defensibility Rationale:
 import os
 from pydantic import BaseModel
 from typing import Literal
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Settings(BaseModel):
     # Operating Mode: SIMULATED (in-memory realistic mock) or GNS3_LIVE (live GNS3 v2 REST API)

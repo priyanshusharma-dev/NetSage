@@ -11,7 +11,7 @@
 ![CI](https://img.shields.io/badge/CI-GitHub_Actions-green?logo=githubactions&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**An autonomous LLM-assisted network diagnostics and automated remediation platform with RAG vector retrieval, configurable safety gatekeeping, and real-time topology visualization.**
+**NetSage is an autonomous network troubleshooting system built around a Statistical Fallback Gatekeeper. In mission-critical enterprise networking, unjustified AI confidence is dangerous. When telemetry is ambiguous or out-of-distribution, NetSage actively refuses to guess, safely yielding control to human engineers with: "Insufficient evidence — escalate to manual diagnosis", while using RAG and dual-tier LLM orchestration for reliable, deterministic remediation when confident.**
 
 [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Supported Faults](#-supported-fault-taxonomy) • [Viva Voce Defensibility](#-viva-voce-defensibility)
 
@@ -31,11 +31,13 @@ NetSage implements a **Statistical Fallback Gatekeeper** that computes dual-thre
 ---
 
 ## 🌟 Key Capabilities
-- **Dual-Engine Architecture (Simulated & Live Netmiko)**:
-  - **High-Fidelity In-Memory Simulation Engine**: State-machine emulation of Cisco IOS and Linux POSIX CLI responses for 100% reproducible, zero-flake viva voce demonstrations without hypervisor crashes.
-  - **Live GNS3 & Netmiko Connector**: Integrated `netmiko.ConnectHandler` telnet/SSH execution hooks for real GNS3 QEMU / Dynamips appliances.
+
+> [!NOTE]
+> **SIMULATED MODE BY DEFAULT:** To ensure 100% reproducible and zero-flake demonstrations during academic defense, this system runs in a deterministic simulated mode by default. While production-ready `netmiko` SSH and GNS3 REST API hooks exist in the codebase, they are not the active path. This eliminates external hypervisor dependencies and proves the core AI logic reliably.
+
+- **Deterministic In-Memory Simulation Engine**: State-machine emulation of Cisco IOS and Linux POSIX CLI responses for reliable demonstrations without hypervisor crashes. 
 - **Chaos Engineering Fault Deck**: Deterministic injection across OSI Layers 1 through 7 (`interface_down`, `subnet_misconfig`, `acl_blocking`, `routing_loop`, `dns_failure`).
-- **Domain RAG via ChromaDB**: `sentence-transformers/all-MiniLM-L6-v2` dense vector retrieval over 8 curated network troubleshooting guides (MTU sizing, OSPF adjacency, ARP conflicts, ACLs, etc.).
+- **Domain RAG via ChromaDB**: `sentence-transformers/all-MiniLM-L6-v2` dense vector retrieval over 8 curated network troubleshooting guides.
 - **Dual-Tier LLM Orchestration**: Primary cloud inference via **Groq Llama 3.3 70B**, automated failover to **Local Ollama**, and an air-gapped deterministic expert fallback.
 - **Interactive Web Terminal Console**: Direct in-browser Cisco IOS exec shell (`show ip route`, `ping`, `traceroute`, `show ip access-lists`).
 - **Persistent SQLite Audit Database**: Full telemetry persistence with ground-truth accuracy tracking (`netsage_audit.db`).

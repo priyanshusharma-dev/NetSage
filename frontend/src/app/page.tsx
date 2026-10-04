@@ -7,7 +7,9 @@ import {
   Sliders,
   Network,
   Clock,
-  Wifi
+  Wifi,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 import TopologyView from '@/components/TopologyView';
@@ -61,6 +63,7 @@ export default function NetSageDashboard() {
   const [showArch, setShowArch] = useState<boolean>(false);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [activeTerminalNode, setActiveTerminalNode] = useState<{ id: string; name: string } | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Time ticker
   const [timeStr, setTimeStr] = useState<string>('');
@@ -73,6 +76,10 @@ export default function NetSageDashboard() {
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Fetch initial topology and status
   const fetchTopology = useCallback(async () => {
@@ -275,6 +282,19 @@ export default function NetSageDashboard() {
             <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
             <span className="text-slate-300 text-[11px]">Mode: {topology.mode || 'SIMULATED'}</span>
           </div>
+
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="btn-cyber-ghost text-xs px-3 py-1.5 flex items-center gap-1.5"
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-indigo-500" />
+            )}
+            Theme
+          </button>
 
           <button
             onClick={() => setShowArch(true)}
