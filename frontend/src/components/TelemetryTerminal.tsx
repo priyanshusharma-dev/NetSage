@@ -76,11 +76,11 @@ export default function TelemetryTerminal({
       </div>
 
       {activeTab === 'summary' ? (
-        <div className="cyber-terminal h-[190px] p-4 overflow-y-auto whitespace-pre-wrap leading-relaxed text-xs">
+        <div className="cyber-terminal h-47.5 p-4 overflow-y-auto whitespace-pre-wrap leading-relaxed text-xs">
           {symptomSummary || 'No telemetry collected yet. Inject a fault above or run diagnosis to stream live router/host state.'}
         </div>
       ) : (
-        <div className="h-[190px] overflow-y-auto space-y-2 pr-1">
+        <div className="h-47.5 overflow-y-auto space-y-2 pr-1">
           {anomalies.length === 0 ? (
             <div className="py-12 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-2 font-mono">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />

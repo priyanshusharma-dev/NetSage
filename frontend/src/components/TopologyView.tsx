@@ -70,9 +70,9 @@ export default function TopologyView({ nodes, links, activeFaults, onSelectNode,
       </div>
 
       {/* SVG Canvas */}
-      <div className="w-full h-[420px] bg-[#040711] rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center">
+      <div className="w-full h-105 bg-[#040711] rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center">
         {/* Background Grid Mesh */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-size-[28px_28px] pointer-events-none" />
 
         <svg className="w-full h-full relative z-10" viewBox="0 0 900 550">
           <defs>
@@ -217,35 +217,35 @@ export default function TopologyView({ nodes, links, activeFaults, onSelectNode,
             );
           })}
         </svg>
+      </div>
 
-        {/* Floating Quick Action Footer inside Canvas */}
-        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between pointer-events-auto">
-          <span className="text-[11px] font-mono text-slate-500 bg-slate-950/80 px-2.5 py-1 rounded-md border border-white/5">
-            Topology Model: Cisco IOSv 15.9 & Linux POSIX Endpoints
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onOpenTerminal('HQ-R1', 'HQ Edge Router')}
-              className="btn-cyber-ghost text-[11px] py-1 px-2.5 flex items-center gap-1.5 bg-slate-900/90 hover:border-sky-500/40 text-sky-300"
-            >
-              <Terminal className="w-3.5 h-3.5 text-sky-400" />
-              CLI: HQ-R1
-            </button>
-            <button
-              onClick={() => onOpenTerminal('Core-R3', 'Core Transit Router')}
-              className="btn-cyber-ghost text-[11px] py-1 px-2.5 flex items-center gap-1.5 bg-slate-900/90 hover:border-sky-500/40 text-sky-300"
-            >
-              <Terminal className="w-3.5 h-3.5 text-purple-400" />
-              CLI: Core-R3
-            </button>
-            <button
-              onClick={() => onOpenTerminal('Host-A', 'HQ Workstation')}
-              className="btn-cyber-ghost text-[11px] py-1 px-2.5 flex items-center gap-1.5 bg-slate-900/90 hover:border-sky-500/40 text-emerald-300"
-            >
-              <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-              CLI: Host-A
-            </button>
-          </div>
+      {/* Quick Action Footer (Moved outside canvas to prevent overlapping nodes) */}
+      <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 pointer-events-auto">
+        <span className="text-[11px] font-mono text-slate-500 bg-slate-950/80 px-2.5 py-1.5 rounded-md border border-white/5">
+          Topology Model: Cisco IOSv 15.9 & Linux POSIX Endpoints
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => onOpenTerminal('HQ-R1', 'HQ Edge Router')}
+            className="btn-cyber-ghost text-[11px] py-1 px-2.5 flex items-center gap-1.5 bg-slate-900/90 hover:border-sky-500/40 text-sky-300"
+          >
+            <Terminal className="w-3.5 h-3.5 text-sky-400" />
+            CLI: HQ-R1
+          </button>
+          <button
+            onClick={() => onOpenTerminal('Core-R3', 'Core Transit Router')}
+            className="btn-cyber-ghost text-[11px] py-1 px-2.5 flex items-center gap-1.5 bg-slate-900/90 hover:border-sky-500/40 text-sky-300"
+          >
+            <Terminal className="w-3.5 h-3.5 text-purple-400" />
+            CLI: Core-R3
+          </button>
+          <button
+            onClick={() => onOpenTerminal('Host-A', 'HQ Workstation')}
+            className="btn-cyber-ghost text-[11px] py-1 px-2.5 flex items-center gap-1.5 bg-slate-900/90 hover:border-sky-500/40 text-emerald-300"
+          >
+            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+            CLI: Host-A
+          </button>
         </div>
       </div>
     </div>

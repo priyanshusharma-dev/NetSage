@@ -101,7 +101,7 @@ export default function EvidenceViewer({ evidence }: EvidenceViewerProps) {
                       </div>
                       <div className="w-20 bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1 border border-white/5">
                         <div
-                          className="bg-gradient-to-r from-sky-400 to-indigo-400 h-full rounded-full"
+                          className="bg-linear-to-r from-sky-400 to-indigo-400 h-full rounded-full"
                           style={{ width: `${simPct}%` }}
                         />
                       </div>
